@@ -2,42 +2,135 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { Infer, v } from "convex/values";
 
-// default user roles. can add / remove based on the project as needed
+// User roles for WasteChain
 export const ROLES = {
   ADMIN: "admin",
-  USER: "user",
-  MEMBER: "member",
+  CITIZEN: "citizen",
+  COLLECTOR: "collector",
 } as const;
 
 export const roleValidator = v.union(
   v.literal(ROLES.ADMIN),
-  v.literal(ROLES.USER),
-  v.literal(ROLES.MEMBER),
+  v.literal(ROLES.CITIZEN),
+  v.literal(ROLES.COLLECTOR),
 );
 export type Role = Infer<typeof roleValidator>;
 
+// Material types for recycling
+export const MATERIAL_TYPES = {
+  PLASTIC: "plastic",
+  PAPER: "paper",
+  GLASS: "glass",
+  METAL: "metal",
+  ELECTRONICS: "electronics",
+  ORGANIC: "organic",
+} as const;
+
+export const materialTypeValidator = v.union(
+  v.literal(MATERIAL_TYPES.PLASTIC),
+  v.literal(MATERIAL_TYPES.PAPER),
+  v.literal(MATERIAL_TYPES.GLASS),
+  v.literal(MATERIAL_TYPES.METAL),
+  v.literal(MATERIAL_TYPES.ELECTRONICS),
+  v.literal(MATERIAL_TYPES.ORGANIC),
+);
+
+// Pickup request status
+export const PICKUP_STATUS = {
+  PENDING: "pending",
+  ACCEPTED: "accepted",
+  IN_PROGRESS: "in_progress",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+} as const;
+
+export const pickupStatusValidator = v.union(
+  v.literal(PICKUP_STATUS.PENDING),
+  v.literal(PICKUP_STATUS.ACCEPTED),
+  v.literal(PICKUP_STATUS.IN_PROGRESS),
+  v.literal(PICKUP_STATUS.COMPLETED),
+  v.literal(PICKUP_STATUS.CANCELLED),
+);
+
 const schema = defineSchema(
   {
-    // default auth tables using convex auth.
-    ...authTables, // do not remove or modify
+    ...authTables,
 
-    // the users table is the default users table that is brought in by the authTables
     users: defineTable({
-      name: v.optional(v.string()), // name of the user. do not remove
-      image: v.optional(v.string()), // image of the user. do not remove
-      email: v.optional(v.string()), // email of the user. do not remove
-      emailVerificationTime: v.optional(v.number()), // email verification time. do not remove
-      isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      email: v.optional(v.string()),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      role: v.optional(roleValidator),
+      
+      // WasteChain specific fields
+      ecoPoints: v.optional(v.number()),
+      phone: v.optional(v.string()),
+      address: v.optional(v.string()),
+      latitude: v.optional(v.number()),
+      longitude: v.optional(v.number()),
+      
+      // Collector specific
+      isVerified: v.optional(v.boolean()),
+      vehicleNumber: v.optional(v.string()),
+      totalCollections: v.optional(v.number()),
+      rating: v.optional(v.number()),
+    })
+      .index("email", ["email"])
+      .index("role", ["role"]),
 
-      role: v.optional(roleValidator), // role of the user. do not remove
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+    pickupRequests: defineTable({
+      citizenId: v.id("users"),
+      collectorId: v.optional(v.id("users")),
+      materialType: materialTypeValidator,
+      estimatedWeight: v.number(),
+      actualWeight: v.optional(v.number()),
+      status: pickupStatusValidator,
+      address: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      notes: v.optional(v.string()),
+      scheduledDate: v.optional(v.number()),
+      completedDate: v.optional(v.number()),
+      ecoPointsEarned: v.optional(v.number()),
+      blockchainTxHash: v.optional(v.string()),
+    })
+      .index("citizenId", ["citizenId"])
+      .index("collectorId", ["collectorId"])
+      .index("status", ["status"]),
 
-    // add other tables here
+    transactions: defineTable({
+      userId: v.id("users"),
+      type: v.union(v.literal("earn"), v.literal("redeem")),
+      amount: v.number(),
+      description: v.string(),
+      pickupRequestId: v.optional(v.id("pickupRequests")),
+      blockchainTxHash: v.optional(v.string()),
+    }).index("userId", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    partnerStores: defineTable({
+      name: v.string(),
+      category: v.string(),
+      address: v.string(),
+      latitude: v.number(),
+      longitude: v.number(),
+      redemptionRate: v.number(), // EcoPoints per dollar
+      logo: v.optional(v.string()),
+      isActive: v.boolean(),
+    }),
+
+    redemptions: defineTable({
+      userId: v.id("users"),
+      storeId: v.id("partnerStores"),
+      ecoPointsUsed: v.number(),
+      valueRedeemed: v.number(),
+      qrCode: v.string(),
+      status: v.union(v.literal("pending"), v.literal("completed"), v.literal("expired")),
+      expiresAt: v.number(),
+    })
+      .index("userId", ["userId"])
+      .index("qrCode", ["qrCode"]),
   },
   {
     schemaValidation: false,
