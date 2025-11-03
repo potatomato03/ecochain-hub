@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Id } from "./_generated/dataModel";
 
-// Create a new pickup request
+// Create a new pickup request and auto-complete it
 export const createPickupRequest = mutation({
   args: {
     materialType: v.string(),
@@ -18,19 +18,49 @@ export const createPickupRequest = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
+    // Use estimated weight as actual weight for auto-completion
+    const actualWeight = args.estimatedWeight;
+    
+    // Calculate EcoPoints (10 points per kg)
+    const ecoPoints = Math.floor(actualWeight * 10);
+    const txHash = `0x${Math.random().toString(36).substring(2, 15)}`;
+
+    // Create pickup request as completed
     const pickupId = await ctx.db.insert("pickupRequests", {
       citizenId: userId,
       materialType: args.materialType as any,
       estimatedWeight: args.estimatedWeight,
-      status: "pending",
+      actualWeight: actualWeight,
+      status: "completed",
       address: args.address,
       latitude: args.latitude,
       longitude: args.longitude,
       notes: args.notes,
       scheduledDate: args.scheduledDate,
+      completedDate: Date.now(),
+      ecoPointsEarned: ecoPoints,
+      blockchainTxHash: txHash,
     });
 
-    return pickupId;
+    // Award points to citizen
+    const citizen = await ctx.db.get(userId);
+    if (citizen) {
+      await ctx.db.patch(userId, {
+        ecoPoints: (citizen.ecoPoints || 0) + ecoPoints,
+      });
+    }
+
+    // Create transaction record
+    await ctx.db.insert("transactions", {
+      userId: userId,
+      type: "earn",
+      amount: ecoPoints,
+      description: `Recycled ${actualWeight}kg of ${args.materialType}`,
+      pickupRequestId: pickupId,
+      blockchainTxHash: txHash,
+    });
+
+    return { pickupId, ecoPoints, txHash };
   },
 });
 

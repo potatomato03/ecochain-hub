@@ -28,7 +28,7 @@ export default function PickupRequest() {
     setIsLoading(true);
 
     try {
-      await createPickup({
+      const result = await createPickup({
         materialType: formData.materialType,
         estimatedWeight: parseFloat(formData.estimatedWeight),
         address: formData.address,
@@ -37,7 +37,9 @@ export default function PickupRequest() {
         notes: formData.notes || undefined,
       });
 
-      toast.success("Pickup request created successfully!");
+      toast.success(`Pickup completed! You earned ${result.ecoPoints} EcoPoints! 🎉`, {
+        description: `${formData.estimatedWeight}kg of ${formData.materialType} recycled`,
+      });
       navigate("/dashboard");
     } catch (error) {
       toast.error("Failed to create pickup request");
@@ -128,7 +130,7 @@ export default function PickupRequest() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Request...
+                      Processing Pickup...
                     </>
                   ) : (
                     "Submit Request"
