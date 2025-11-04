@@ -8,37 +8,67 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+const MATERIAL_OPTIONS = [
+  { id: "plastic", label: "Plastic" },
+  { id: "paper", label: "Paper" },
+  { id: "glass", label: "Glass" },
+  { id: "metal", label: "Metal" },
+  { id: "electronics", label: "Electronics" },
+  { id: "organic", label: "Organic" },
+];
 
 export default function PickupRequest() {
   const navigate = useNavigate();
   const createPickup = useMutation(api.pickups.createPickupRequest);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    materialType: "",
     estimatedWeight: "",
     address: "",
     notes: "",
   });
 
+  const handleMaterialToggle = (materialId: string) => {
+    setSelectedMaterials((prev) =>
+      prev.includes(materialId)
+        ? prev.filter((id) => id !== materialId)
+        : [...prev, materialId]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedMaterials.length === 0) {
+      toast.error("Please select at least one material type");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await createPickup({
-        materialType: formData.materialType,
-        estimatedWeight: parseFloat(formData.estimatedWeight),
-        address: formData.address,
-        latitude: 0, // Mock GPS
-        longitude: 0,
-        notes: formData.notes || undefined,
-      });
+      let totalPoints = 0;
+      const weight = parseFloat(formData.estimatedWeight);
 
-      toast.success(`Pickup completed! You earned ${result.ecoPoints} EcoPoints! 🎉`, {
-        description: `${formData.estimatedWeight}kg of ${formData.materialType} recycled`,
+      // Create a pickup for each selected material type
+      for (const materialType of selectedMaterials) {
+        const result = await createPickup({
+          materialType,
+          estimatedWeight: weight / selectedMaterials.length, // Distribute weight evenly
+          address: formData.address,
+          latitude: 0, // Mock GPS
+          longitude: 0,
+          notes: formData.notes || undefined,
+        });
+        totalPoints += result.ecoPoints;
+      }
+
+      toast.success(`Pickup completed! You earned ${totalPoints} EcoPoints! 🎉`, {
+        description: `${formData.estimatedWeight}kg of ${selectedMaterials.join(", ")} recycled`,
       });
       navigate("/dashboard");
     } catch (error) {
@@ -71,28 +101,36 @@ export default function PickupRequest() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="materialType">Material Type</Label>
-                  <Select
-                    value={formData.materialType}
-                    onValueChange={(value) => setFormData({ ...formData, materialType: value })}
-                    required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select material type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="plastic">Plastic</SelectItem>
-                      <SelectItem value="paper">Paper</SelectItem>
-                      <SelectItem value="glass">Glass</SelectItem>
-                      <SelectItem value="metal">Metal</SelectItem>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="organic">Organic</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label className="mb-3 block">Material Types (Select one or more)</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {MATERIAL_OPTIONS.map((material) => (
+                      <div
+                        key={material.id}
+                        className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                          selectedMaterials.includes(material.id)
+                            ? "border-primary bg-primary/10"
+                            : "border-white/20 glass-dark"
+                        }`}
+                        onClick={() => handleMaterialToggle(material.id)}
+                      >
+                        <Checkbox
+                          id={material.id}
+                          checked={selectedMaterials.includes(material.id)}
+                          onCheckedChange={() => handleMaterialToggle(material.id)}
+                        />
+                        <Label
+                          htmlFor={material.id}
+                          className="flex-1 cursor-pointer font-medium"
+                        >
+                          {material.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="estimatedWeight">Estimated Weight (kg)</Label>
+                  <Label htmlFor="estimatedWeight">Total Estimated Weight (kg)</Label>
                   <Input
                     id="estimatedWeight"
                     type="number"
