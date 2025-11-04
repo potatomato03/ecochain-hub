@@ -1,12 +1,34 @@
 import { motion } from "framer-motion";
-import { Leaf, Recycle, Coins, MapPin, Award, ArrowRight } from "lucide-react";
+import { Leaf, Recycle, Coins, MapPin, Award, ArrowRight, Shield, Zap, Users, BookOpen, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function Landing() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
+  const [showEducationDialog, setShowEducationDialog] = useState(false);
+
+  const mockArticles = [
+    {
+      title: "Plastic Waste Segregation Guide",
+      description: "Learn how to properly separate different types of plastics for effective recycling.",
+      image: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=400&h=250&fit=crop",
+    },
+    {
+      title: "Organic Waste Composting",
+      description: "Turn your kitchen waste into nutrient-rich compost for your garden.",
+      image: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=400&h=250&fit=crop",
+    },
+    {
+      title: "E-Waste Disposal Best Practices",
+      description: "Safe handling and recycling of electronic devices and components.",
+      image: "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400&h=250&fit=crop",
+    },
+  ];
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -68,8 +90,48 @@ export default function Landing() {
                   <Recycle className="ml-2 h-5 w-5" />
                 </Button>
                 <Button size="lg" variant="outline" className="glass text-lg">
-                  Learn More
+                  Watch How it Works
                 </Button>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 max-w-3xl mx-auto">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="glass p-4 rounded-xl flex items-center gap-3"
+                >
+                  <Users className="h-8 w-8 text-primary flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="font-bold text-sm">Zero Middlemen</p>
+                    <p className="text-xs text-muted-foreground">Direct connection</p>
+                  </div>
+                </motion.div>
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="glass p-4 rounded-xl flex items-center gap-3"
+                >
+                  <Shield className="h-8 w-8 text-primary flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="font-bold text-sm">100% Transparent</p>
+                    <p className="text-xs text-muted-foreground">Blockchain verified</p>
+                  </div>
+                </motion.div>
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="glass p-4 rounded-xl flex items-center gap-3"
+                >
+                  <Zap className="h-8 w-8 text-primary flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="font-bold text-sm">Instant Rewards</p>
+                    <p className="text-xs text-muted-foreground">Immediate EcoPoints</p>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
@@ -124,8 +186,34 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Waste Segregation Education Section */}
       <div className="py-20 px-4 glass-dark">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <BookOpen className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-4xl font-bold tracking-tight mb-4">Learn Proper Waste Segregation</h2>
+            <p className="text-xl text-muted-foreground mb-8">
+              Master the art of waste separation for maximum recycling impact
+            </p>
+            <Button
+              size="lg"
+              onClick={() => setShowEducationDialog(true)}
+              className="text-lg"
+            >
+              View Education Resources
+              <ExternalLink className="ml-2 h-5 w-5" />
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 text-center">
             {[
@@ -176,6 +264,45 @@ export default function Landing() {
           </motion.div>
         </div>
       </div>
+
+      {/* Education Dialog */}
+      <Dialog open={showEducationDialog} onOpenChange={setShowEducationDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Waste Segregation Education</DialogTitle>
+            <DialogDescription>
+              Learn the best practices for separating waste to maximize recycling efficiency
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            {mockArticles.map((article, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="glass border-white/20 hover:scale-105 transition-transform cursor-pointer">
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-40 object-cover rounded-t-lg"
+                  />
+                  <CardHeader>
+                    <CardTitle className="text-lg">{article.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{article.description}</p>
+                    <Button variant="link" className="mt-2 p-0 h-auto">
+                      Read More <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
