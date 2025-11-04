@@ -106,12 +106,11 @@ export default function PickupRequest() {
                     {MATERIAL_OPTIONS.map((material) => (
                       <div
                         key={material.id}
-                        className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                        className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
                           selectedMaterials.includes(material.id)
                             ? "border-primary bg-primary/10"
                             : "border-white/20 glass-dark"
                         }`}
-                        onClick={() => handleMaterialToggle(material.id)}
                       >
                         <Checkbox
                           id={material.id}
