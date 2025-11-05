@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import LocationPicker from "@/components/LocationPicker";
 
 const MATERIAL_OPTIONS = [
   { id: "plastic", label: "Plastic" },
@@ -26,9 +27,12 @@ export default function PickupRequest() {
   const createPickup = useMutation(api.pickups.createPickupRequest);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [showMap, setShowMap] = useState(false);
   const [formData, setFormData] = useState({
     estimatedWeight: "",
     address: "",
+    latitude: 0,
+    longitude: 0,
     notes: "",
   });
 
@@ -40,11 +44,27 @@ export default function PickupRequest() {
     );
   };
 
+  const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      address: address,
+    }));
+    setShowMap(false);
+    toast.success("Location selected successfully!");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (selectedMaterials.length === 0) {
       toast.error("Please select at least one material type");
+      return;
+    }
+
+    if (!formData.address || formData.latitude === 0) {
+      toast.error("Please select a location on the map");
       return;
     }
 
@@ -58,10 +78,10 @@ export default function PickupRequest() {
       for (const materialType of selectedMaterials) {
         const result = await createPickup({
           materialType,
-          estimatedWeight: weight / selectedMaterials.length, // Distribute weight evenly
+          estimatedWeight: weight / selectedMaterials.length,
           address: formData.address,
-          latitude: 0, // Mock GPS
-          longitude: 0,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
           notes: formData.notes || undefined,
         });
         totalPoints += result.ecoPoints;
@@ -142,14 +162,50 @@ export default function PickupRequest() {
                 </div>
 
                 <div>
-                  <Label htmlFor="address">Pickup Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Enter your address"
-                    required
-                  />
+                  <Label>Pickup Location</Label>
+                  <div className="space-y-3 mt-2">
+                    {!showMap ? (
+                      <>
+                        <div className="flex gap-2">
+                          <Input
+                            value={formData.address}
+                            placeholder="Click 'Select on Map' to choose location"
+                            readOnly
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowMap(true)}
+                          >
+                            <MapPin className="h-4 w-4 mr-2" />
+                            Select on Map
+                          </Button>
+                        </div>
+                        {formData.latitude !== 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="space-y-3">
+                        <LocationPicker
+                          onLocationSelect={handleLocationSelect}
+                          initialLat={formData.latitude || 17.385}
+                          initialLng={formData.longitude || 78.4867}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowMap(false)}
+                          className="w-full"
+                        >
+                          Close Map
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
