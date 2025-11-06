@@ -92,8 +92,11 @@ export default function PickupRequest() {
       });
       navigate("/dashboard");
     } catch (error) {
-      toast.error("Failed to create pickup request");
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create pickup request";
+      toast.error(errorMessage, {
+        description: "Please check your connection and try again"
+      });
+      console.error("Pickup request error:", error);
     } finally {
       setIsLoading(false);
     }
