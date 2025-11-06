@@ -161,7 +161,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <div className="flex items-center gap-3">
                       <Recycle className="h-8 w-8 text-primary" />
                       <div>
-                        <p className="font-bold">Waste Generator</p>
+                        <p className="font-bold">Recycler</p>
                         <p className="text-sm text-muted-foreground">
                           Schedule pickups and earn rewards
                         </p>
@@ -194,7 +194,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   onClick={handleRoleConfirm}
                   className="w-full"
                 >
-                  Continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
+                  Continue as {selectedRole === "citizen" ? "Recycler" : "Collector"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
@@ -214,7 +214,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   </div>
                 <CardTitle className="text-xl">Sign In</CardTitle>
                 <CardDescription>
-                  Enter your email to continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
+                  Enter your email to continue as {selectedRole === "citizen" ? "Recycler" : "Collector"}
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
