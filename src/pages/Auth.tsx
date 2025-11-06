@@ -102,8 +102,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       await setUserRole({ role: selectedRole });
-      const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
-      navigate(redirect);
+      // Force navigation after role is set
+      setTimeout(() => {
+        const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+        navigate(redirect, { replace: true });
+        setIsLoading(false);
+      }, 500);
     } catch (error) {
       console.error("Role selection error:", error);
       setError("Failed to set role. Please try again.");

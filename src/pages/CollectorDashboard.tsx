@@ -53,11 +53,13 @@ export default function CollectorDashboard() {
   });
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate("/auth");
-    }
-    if (!isLoading && user && user.role !== "collector") {
-      navigate("/dashboard");
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        navigate("/auth");
+      } else if (user && user.role !== "collector") {
+        // Redirect non-collectors to dashboard
+        navigate("/dashboard", { replace: true });
+      }
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
