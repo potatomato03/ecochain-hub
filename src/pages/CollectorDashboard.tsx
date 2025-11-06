@@ -7,15 +7,26 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Truck, CheckCircle, Clock, Star, LogOut, Package, TrendingUp, Award } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Truck, CheckCircle, Clock, Star, LogOut, Package, MapPin, User, Phone, Mail } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for default marker icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 export default function CollectorDashboard() {
   const { isLoading, isAuthenticated, user, signOut } = useAuth();
@@ -25,7 +36,9 @@ export default function CollectorDashboard() {
   const acceptPickup = useMutation(api.pickups.acceptPickup);
   const completePickup = useMutation(api.pickups.completePickup);
   const rateCitizen = useMutation(api.pickups.rateCitizen);
+  const toggleAvailability = useMutation(api.pickups.toggleAvailability);
 
+  const [isAvailable, setIsAvailable] = useState(true);
   const [completeDialog, setCompleteDialog] = useState<{ open: boolean; pickupId: Id<"pickupRequests"> | null; actualWeight: string }>({
     open: false,
     pickupId: null,
@@ -48,6 +61,12 @@ export default function CollectorDashboard() {
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
+  useEffect(() => {
+    if (user) {
+      setIsAvailable(user.isVerified || false);
+    }
+  }, [user]);
+
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -56,9 +75,18 @@ export default function CollectorDashboard() {
     );
   }
 
-  const completedPickups = assignedPickups?.filter((p) => p.status === "completed").length || 0;
-  const totalEarnings = assignedPickups?.reduce((sum, p) => sum + (p.ecoPointsEarned || 0), 0) || 0;
-  const avgRating = user.rating || 0;
+  const acceptedPickups = assignedPickups?.filter((p) => p.status === "accepted") || [];
+  const completedPickups = assignedPickups?.filter((p) => p.status === "completed") || [];
+
+  const handleAvailabilityToggle = async (checked: boolean) => {
+    try {
+      await toggleAvailability({ isAvailable: checked });
+      setIsAvailable(checked);
+      toast.success(checked ? "You are now available for pickups" : "You are now unavailable");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update availability");
+    }
+  };
 
   const handleAcceptPickup = async (pickupId: Id<"pickupRequests">) => {
     try {
@@ -101,15 +129,110 @@ export default function CollectorDashboard() {
     }
   };
 
+  const PickupCard = ({ pickup, type }: { pickup: any; type: "available" | "accepted" | "completed" }) => (
+    <Card className="bg-white border-2 border-green-100 hover:border-green-300 transition-all">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge
+                variant={type === "completed" ? "default" : type === "accepted" ? "secondary" : "outline"}
+                className={
+                  type === "completed"
+                    ? "bg-green-500 text-white"
+                    : type === "accepted"
+                    ? "bg-blue-500 text-white"
+                    : "bg-yellow-500 text-white"
+                }
+              >
+                {type === "completed" ? "Completed" : type === "accepted" ? "Accepted" : "Pending"}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {new Date(pickup._creationTime).toLocaleDateString()}
+              </span>
+            </div>
+            <CardTitle className="text-base capitalize">{pickup.materialType}</CardTitle>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-2 text-sm">
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+            <span className="text-muted-foreground">{pickup.address}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-green-600" />
+            <span className="text-muted-foreground">
+              Quantity: {pickup.actualWeight || pickup.estimatedWeight} kg
+            </span>
+          </div>
+          {pickup.notes && (
+            <div className="text-xs text-muted-foreground bg-green-50 p-2 rounded">
+              Note: {pickup.notes}
+            </div>
+          )}
+        </div>
+
+        {type === "available" && (
+          <Button
+            onClick={() => handleAcceptPickup(pickup._id)}
+            className="w-full bg-green-600 hover:bg-green-700"
+            disabled={!isAvailable}
+          >
+            Accept Pickup
+          </Button>
+        )}
+
+        {type === "accepted" && (
+          <Button
+            onClick={() =>
+              setCompleteDialog({
+                open: true,
+                pickupId: pickup._id,
+                actualWeight: pickup.estimatedWeight.toString(),
+              })
+            }
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Mark as Complete
+          </Button>
+        )}
+
+        {type === "completed" && pickup.ecoPointsEarned && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Citizen earned:</span>
+            <span className="font-bold text-green-600">{pickup.ecoPointsEarned} EcoPoints</span>
+          </div>
+        )}
+
+        {type === "completed" && pickup.collectorRating && (
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">Your Rating:</span>
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`h-3 w-3 ${
+                  i < pickup.collectorRating ? "fill-yellow-500 text-yellow-500" : "text-gray-300"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* Navbar */}
-      <nav className="glass border-b border-white/20">
+      <nav className="bg-white border-b border-green-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
               <img src="/logo.svg" alt="EcoChain Hub" className="h-8 w-8" />
-              <span className="text-xl font-bold">EcoChain Hub - Collector</span>
+              <span className="text-xl font-bold text-green-700">EcoChain Hub</span>
             </div>
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" onClick={() => signOut()}>
@@ -122,165 +245,214 @@ export default function CollectorDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            Welcome, {user.name || "Collector"}!
-          </h1>
-          <p className="text-muted-foreground mb-8">Manage your pickups and track earnings</p>
+          {/* Welcome Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-green-800 mb-2">
+              Welcome Captain {user.name || ""}!
+            </h1>
+            <p className="text-muted-foreground">Manage your pickup requests and track your collections</p>
+          </div>
 
-          {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <Card className="glass border-white/20">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Collections</CardTitle>
-                <Package className="h-4 w-4 text-primary" />
+          {/* Profile & Availability Section */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            {/* Profile Card */}
+            <Card className="bg-white border-2 border-green-100">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <User className="h-5 w-5" />
+                  Your Profile
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{completedPickups}</div>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">Name:</span>
+                  <span className="text-muted-foreground">{user.name || "Not set"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">Email:</span>
+                  <span className="text-muted-foreground text-xs">{user.email || "Not set"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">Phone:</span>
+                  <span className="text-muted-foreground">{user.phone || "Not set"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">Collections:</span>
+                  <span className="text-muted-foreground">{user.totalCollections || 0}</span>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="glass border-white/20">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
+            {/* Availability Toggle */}
+            <Card className="bg-white border-2 border-green-100">
+              <CardHeader>
+                <CardTitle className="text-green-700">Availability Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{totalEarnings}</div>
-                <p className="text-xs text-muted-foreground mt-1">EcoPoints</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{isAvailable ? "Available" : "Unavailable"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isAvailable ? "You can accept pickups" : "You won't receive requests"}
+                    </p>
+                  </div>
+                  <Switch checked={isAvailable} onCheckedChange={handleAvailabilityToggle} />
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="glass border-white/20">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-                <Star className="h-4 w-4 text-yellow-500" />
+            {/* Stats Card */}
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+              <CardHeader>
+                <CardTitle className="text-white">Your Stats</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{avgRating.toFixed(1)}</div>
-                <p className="text-xs text-muted-foreground mt-1">out of 5</p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass border-white/20">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-                <Truck className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {assignedPickups?.filter((p) => p.status === "accepted").length || 0}
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Total Collections:</span>
+                  <span className="font-bold">{completedPickups.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Active Jobs:</span>
+                  <span className="font-bold">{acceptedPickups.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Rating:</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
+                    <span className="font-bold">{(user.rating || 0).toFixed(1)}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Pickups Tabs */}
-          <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 glass">
-              <TabsTrigger value="pending">Available Pickups</TabsTrigger>
-              <TabsTrigger value="assigned">My Pickups</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="pending">
-              <Card className="glass border-white/20">
-                <CardHeader>
-                  <CardTitle>Available Pickup Requests</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!pendingPickups || pendingPickups.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No pending pickups available
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {pendingPickups.map((pickup) => (
-                        <div
-                          key={pickup._id}
-                          className="flex items-center justify-between p-4 glass-dark rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium capitalize">{pickup.materialType}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {pickup.estimatedWeight} kg • {pickup.address}
-                            </p>
-                            {pickup.notes && (
-                              <p className="text-xs text-muted-foreground mt-1">Note: {pickup.notes}</p>
-                            )}
-                          </div>
-                          <Button onClick={() => handleAcceptPickup(pickup._id)}>
-                            Accept
-                          </Button>
+          {/* Map Widget */}
+          <Card className="bg-white border-2 border-green-100 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <MapPin className="h-5 w-5" />
+                Pickup Locations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full h-[300px] rounded-lg overflow-hidden">
+                <MapContainer
+                  center={[17.385, 78.4867]}
+                  zoom={12}
+                  style={{ height: "100%", width: "100%" }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  {pendingPickups?.map((pickup) => (
+                    <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold capitalize">{pickup.materialType}</p>
+                          <p className="text-xs">{pickup.estimatedWeight} kg</p>
+                          <p className="text-xs text-muted-foreground">{pickup.address}</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </Popup>
+                    </Marker>
+                  ))}
+                  {acceptedPickups?.map((pickup) => (
+                    <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold capitalize">{pickup.materialType}</p>
+                          <p className="text-xs">{pickup.estimatedWeight} kg</p>
+                          <p className="text-xs text-blue-600">Accepted by you</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Available Pickups Section */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-6 w-6 text-yellow-600" />
+              <h2 className="text-2xl font-bold text-green-800">Available Pickups</h2>
+              <Badge variant="secondary" className="ml-2">
+                {pendingPickups?.length || 0}
+              </Badge>
+            </div>
+            {!pendingPickups || pendingPickups.length === 0 ? (
+              <Card className="bg-white border-2 border-green-100">
+                <CardContent className="py-12">
+                  <p className="text-muted-foreground text-center">
+                    No available pickups at the moment
+                  </p>
                 </CardContent>
               </Card>
-            </TabsContent>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pendingPickups.map((pickup) => (
+                  <PickupCard key={pickup._id} pickup={pickup} type="available" />
+                ))}
+              </div>
+            )}
+          </div>
 
-            <TabsContent value="assigned">
-              <Card className="glass border-white/20">
-                <CardHeader>
-                  <CardTitle>My Assigned Pickups</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!assignedPickups || assignedPickups.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      No assigned pickups yet
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {assignedPickups.map((pickup) => (
-                        <div
-                          key={pickup._id}
-                          className="flex items-center justify-between p-4 glass-dark rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="font-medium capitalize">{pickup.materialType}</p>
-                              <Badge
-                                variant={
-                                  pickup.status === "completed"
-                                    ? "default"
-                                    : pickup.status === "accepted"
-                                    ? "secondary"
-                                    : "outline"
-                                }
-                              >
-                                {pickup.status}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {pickup.estimatedWeight} kg • {pickup.address}
-                            </p>
-                            {pickup.status === "completed" && pickup.ecoPointsEarned && (
-                              <p className="text-xs text-primary mt-1">
-                                Citizen earned: {pickup.ecoPointsEarned} EcoPoints
-                              </p>
-                            )}
-                          </div>
-                          {pickup.status === "accepted" && (
-                            <Button
-                              onClick={() =>
-                                setCompleteDialog({
-                                  open: true,
-                                  pickupId: pickup._id,
-                                  actualWeight: pickup.estimatedWeight.toString(),
-                                })
-                              }
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Complete
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+          {/* Accepted Pickups Section */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Truck className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-bold text-green-800">Your Accepted Pickups</h2>
+              <Badge variant="secondary" className="ml-2">
+                {acceptedPickups.length}
+              </Badge>
+            </div>
+            {acceptedPickups.length === 0 ? (
+              <Card className="bg-white border-2 border-green-100">
+                <CardContent className="py-12">
+                  <p className="text-muted-foreground text-center">
+                    No accepted pickups yet
+                  </p>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {acceptedPickups.map((pickup) => (
+                  <PickupCard key={pickup._id} pickup={pickup} type="accepted" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Completed Pickups Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+              <h2 className="text-2xl font-bold text-green-800">Completed Pickups</h2>
+              <Badge variant="secondary" className="ml-2">
+                {completedPickups.length}
+              </Badge>
+            </div>
+            {completedPickups.length === 0 ? (
+              <Card className="bg-white border-2 border-green-100">
+                <CardContent className="py-12">
+                  <p className="text-muted-foreground text-center">
+                    No completed pickups yet
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completedPickups.map((pickup) => (
+                  <PickupCard key={pickup._id} pickup={pickup} type="completed" />
+                ))}
+              </div>
+            )}
+          </div>
         </motion.div>
       </div>
 
@@ -306,7 +478,9 @@ export default function CollectorDashboard() {
             <Button variant="outline" onClick={() => setCompleteDialog({ open: false, pickupId: null, actualWeight: "" })}>
               Cancel
             </Button>
-            <Button onClick={handleCompletePickup}>Complete Pickup</Button>
+            <Button onClick={handleCompletePickup} className="bg-green-600 hover:bg-green-700">
+              Complete Pickup
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -346,7 +520,9 @@ export default function CollectorDashboard() {
             <Button variant="outline" onClick={() => setRatingDialog({ open: false, pickupId: null, rating: 5, feedback: "" })}>
               Skip
             </Button>
-            <Button onClick={handleRateCitizen}>Submit Rating</Button>
+            <Button onClick={handleRateCitizen} className="bg-green-600 hover:bg-green-700">
+              Submit Rating
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
