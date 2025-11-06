@@ -26,7 +26,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
   const setUserRole = useMutation(api.users.setUserRole);
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | "roleSelect" | { email: string }>("signIn");
@@ -36,11 +36,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+    if (!authLoading && isAuthenticated && user) {
+      // If user has a role, redirect to appropriate dashboard
+      if (user.role === "collector") {
+        navigate("/collector", { replace: true });
+      } else if (user.role === "citizen") {
+        navigate("/dashboard", { replace: true });
+      }
+      // If no role, stay on auth page to show role selection
     }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+  }, [authLoading, isAuthenticated, user, navigate]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,9 +75,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      // After successful sign-in, show role selection
-      setStep("roleSelect");
-      setIsLoading(false);
+      // Wait a moment for auth to complete, then check if user has role
+      setTimeout(() => {
+        setStep("roleSelect");
+        setIsLoading(false);
+      }, 500);
     } catch (error) {
       console.error("OTP verification error:", error);
       setError("The verification code you entered is incorrect.");
@@ -87,9 +94,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       await signIn("anonymous");
       
-      // After successful sign-in, show role selection
-      setStep("roleSelect");
-      setIsLoading(false);
+      // Wait a moment for auth to complete, then show role selection
+      setTimeout(() => {
+        setStep("roleSelect");
+        setIsLoading(false);
+      }, 500);
     } catch (error) {
       console.error("Guest login error:", error);
       setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);

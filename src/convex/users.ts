@@ -43,13 +43,20 @@ export const setUserRole = mutation({
 
     const user = await ctx.db.get(userId);
     
-    // Only set role if not already set or if explicitly changing
-    await ctx.db.patch(userId, {
+    // Set role and initialize role-specific fields
+    const updates: any = {
       role: args.role,
-      ecoPoints: args.role === "citizen" ? (user?.ecoPoints || 0) : undefined,
-      totalCollections: args.role === "collector" ? (user?.totalCollections || 0) : undefined,
-      rating: args.role === "collector" ? (user?.rating || 0) : undefined,
-    });
+    };
+
+    if (args.role === "citizen") {
+      updates.ecoPoints = user?.ecoPoints || 0;
+    } else if (args.role === "collector") {
+      updates.totalCollections = user?.totalCollections || 0;
+      updates.rating = user?.rating || 0;
+      updates.isVerified = user?.isVerified || false;
+    }
+
+    await ctx.db.patch(userId, updates);
 
     return { success: true, role: args.role };
   },
