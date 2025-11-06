@@ -53,7 +53,8 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
           <RouteSyncer />
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<AuthPage />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/collector" element={<CollectorDashboard />} />

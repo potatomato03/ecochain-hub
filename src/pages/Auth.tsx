@@ -29,7 +29,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, user, signIn } = useAuth();
   const setUserRole = useMutation(api.users.setUserRole);
   const navigate = useNavigate();
-  const [step, setStep] = useState<"signIn" | "roleSelect" | { email: string }>("signIn");
+  const [step, setStep] = useState<"roleSelect" | "signIn" | { email: string }>("roleSelect");
   const [selectedRole, setSelectedRole] = useState<"citizen" | "collector">("citizen");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +46,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // If no role, stay on auth page to show role selection
     }
   }, [authLoading, isAuthenticated, user, navigate]);
+
+  const handleRoleConfirm = () => {
+    setStep("signIn");
+  };
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,9 +79,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      // Wait a moment for auth to complete, then check if user has role
-      setTimeout(() => {
-        setStep("roleSelect");
+      // Wait a moment for auth to complete, then set role
+      setTimeout(async () => {
+        try {
+          await setUserRole({ role: selectedRole });
+          const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+          navigate(redirect, { replace: true });
+        } catch (err) {
+          console.error("Role setting error:", err);
+          setError("Failed to set role. Please try again.");
+        }
         setIsLoading(false);
       }, 500);
     } catch (error) {
@@ -94,32 +105,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       await signIn("anonymous");
       
-      // Wait a moment for auth to complete, then show role selection
-      setTimeout(() => {
-        setStep("roleSelect");
+      // Wait a moment for auth to complete, then set role
+      setTimeout(async () => {
+        try {
+          await setUserRole({ role: selectedRole });
+          const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+          navigate(redirect, { replace: true });
+        } catch (err) {
+          console.error("Role setting error:", err);
+          setError("Failed to set role. Please try again.");
+        }
         setIsLoading(false);
       }, 500);
     } catch (error) {
       console.error("Guest login error:", error);
       setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsLoading(false);
-    }
-  };
-
-  const handleRoleSelection = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await setUserRole({ role: selectedRole });
-      // Force navigation after role is set
-      setTimeout(() => {
-        const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
-        navigate(redirect, { replace: true });
-        setIsLoading(false);
-      }, 500);
-    } catch (error) {
-      console.error("Role selection error:", error);
-      setError("Failed to set role. Please try again.");
       setIsLoading(false);
     }
   };
@@ -130,7 +130,76 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center justify-center h-full flex-col">
         <Card className="min-w-[350px] pb-0 border shadow-md">
-          {step === "signIn" ? (
+          {step === "roleSelect" ? (
+            <>
+              <CardHeader className="text-center mt-4">
+                <div className="flex justify-center">
+                  <img
+                    src="./logo.svg"
+                    alt="EcoChain Hub"
+                    width={64}
+                    height={64}
+                    className="rounded-lg mb-4 cursor-pointer"
+                    onClick={() => navigate("/")}
+                  />
+                </div>
+                <CardTitle>Welcome to EcoChain Hub</CardTitle>
+                <CardDescription>
+                  Choose your role to get started
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="space-y-3">
+                  <div
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedRole === "citizen"
+                        ? "border-primary bg-primary/10"
+                        : "border-white/20 glass-dark"
+                    }`}
+                    onClick={() => setSelectedRole("citizen")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Recycle className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="font-bold">Waste Generator</p>
+                        <p className="text-sm text-muted-foreground">
+                          Schedule pickups and earn rewards
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedRole === "collector"
+                        ? "border-primary bg-primary/10"
+                        : "border-white/20 glass-dark"
+                    }`}
+                    onClick={() => setSelectedRole("collector")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="font-bold">Waste Collector</p>
+                        <p className="text-sm text-muted-foreground">
+                          Accept pickups and earn income
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleRoleConfirm}
+                  className="w-full"
+                >
+                  Continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </>
+          ) : step === "signIn" ? (
             <>
               <CardHeader className="text-center">
               <div className="flex justify-center">
@@ -140,12 +209,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       width={64}
                       height={64}
                       className="rounded-lg mb-4 mt-4 cursor-pointer"
-                      onClick={() => navigate("/")}
+                      onClick={() => setStep("roleSelect")}
                     />
                   </div>
-                <CardTitle className="text-xl">Get Started</CardTitle>
+                <CardTitle className="text-xl">Sign In</CardTitle>
                 <CardDescription>
-                  Enter your email to log in or sign up
+                  Enter your email to continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
                 </CardDescription>
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
@@ -202,78 +271,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       <UserX className="mr-2 h-4 w-4" />
                       Continue as Guest
                     </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full mt-2"
+                      onClick={() => setStep("roleSelect")}
+                      disabled={isLoading}
+                    >
+                      Change Role
+                    </Button>
                   </div>
                 </CardContent>
               </form>
-            </>
-          ) : step === "roleSelect" ? (
-            <>
-              <CardHeader className="text-center mt-4">
-                <CardTitle>Choose Your Role</CardTitle>
-                <CardDescription>
-                  Are you a waste generator or collector?
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="space-y-3">
-                  <div
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedRole === "citizen"
-                        ? "border-primary bg-primary/10"
-                        : "border-white/20 glass-dark"
-                    }`}
-                    onClick={() => setSelectedRole("citizen")}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Recycle className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="font-bold">Waste Generator</p>
-                        <p className="text-sm text-muted-foreground">
-                          Schedule pickups and earn rewards
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedRole === "collector"
-                        ? "border-primary bg-primary/10"
-                        : "border-white/20 glass-dark"
-                    }`}
-                    onClick={() => setSelectedRole("collector")}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Truck className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="font-bold">Waste Collector</p>
-                        <p className="text-sm text-muted-foreground">
-                          Accept pickups and earn income
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  onClick={handleRoleSelection}
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Setting up...
-                    </>
-                  ) : (
-                    <>
-                      Continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
             </>
           ) : (
             <>
