@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Truck, CheckCircle, Clock, Star, LogOut, Package, MapPin, User, Phone, Mail } from "lucide-react";
+import { Truck, CheckCircle, Clock, Star, LogOut, Package, MapPin, User, Phone, Mail, Trophy } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
@@ -227,234 +227,338 @@ export default function CollectorDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       {/* Navbar */}
-      <nav className="bg-white border-b border-green-100 shadow-sm">
+      <nav className="glass sticky top-0 z-50 border-b border-green-200/30 shadow-lg backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+            <motion.div 
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => navigate("/")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <img src="/logo.svg" alt="EcoChain Hub" className="h-8 w-8" />
-              <span className="text-xl font-bold text-green-700">EcoChain Hub</span>
-            </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                EcoChain Hub
+              </span>
+            </motion.div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => signOut()}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="ghost" size="icon" onClick={() => signOut()} className="hover:bg-red-50">
+                  <LogOut className="h-4 w-4 text-red-600" />
+                </Button>
+              </motion.div>
             </div>
           </div>
         </div>
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           {/* Welcome Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-green-800 mb-2">
-              Welcome Captain {user.name || ""}!
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+              Welcome Captain {user.name || ""}! 🚛
             </h1>
-            <p className="text-muted-foreground">Manage your pickup requests and track your collections</p>
-          </div>
+            <p className="text-lg text-muted-foreground">Manage your pickup requests and track your collections</p>
+          </motion.div>
 
           {/* Profile & Availability Section */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             {/* Profile Card */}
-            <Card className="bg-white border-2 border-green-100">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-700">
-                  <User className="h-5 w-5" />
-                  Your Profile
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Name:</span>
-                  <span className="text-muted-foreground">{user.name || "Not set"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Email:</span>
-                  <span className="text-muted-foreground text-xs">{user.email || "Not set"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Phone:</span>
-                  <span className="text-muted-foreground">{user.phone || "Not set"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Collections:</span>
-                  <span className="text-muted-foreground">{user.totalCollections || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="glass border-2 border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <User className="h-5 w-5" />
+                    Your Profile
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                    <User className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Name:</span>
+                    <span className="text-muted-foreground">{user.name || "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                    <Mail className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Email:</span>
+                    <span className="text-muted-foreground text-xs truncate">{user.email || "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                    <Phone className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Phone:</span>
+                    <span className="text-muted-foreground">{user.phone || "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50 transition-colors">
+                    <Package className="h-4 w-4 text-green-600" />
+                    <span className="font-medium">Collections:</span>
+                    <span className="text-muted-foreground font-bold">{user.totalCollections || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Availability Toggle */}
-            <Card className="bg-white border-2 border-green-100">
-              <CardHeader>
-                <CardTitle className="text-green-700">Availability Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{isAvailable ? "Available" : "Unavailable"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isAvailable ? "You can accept pickups" : "You won't receive requests"}
-                    </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="glass border-2 border-green-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                <CardHeader>
+                  <CardTitle className="text-green-700">Availability Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50">
+                    <div>
+                      <p className="font-bold text-lg">{isAvailable ? "🟢 Available" : "🔴 Unavailable"}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {isAvailable ? "You can accept pickups" : "You won't receive requests"}
+                      </p>
+                    </div>
+                    <Switch checked={isAvailable} onCheckedChange={handleAvailabilityToggle} className="data-[state=checked]:bg-green-600" />
                   </div>
-                  <Switch checked={isAvailable} onCheckedChange={handleAvailabilityToggle} />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Stats Card */}
-            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-              <CardHeader>
-                <CardTitle className="text-white">Your Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Total Collections:</span>
-                  <span className="font-bold">{completedPickups.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Active Jobs:</span>
-                  <span className="font-bold">{acceptedPickups.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Rating:</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
-                    <span className="font-bold">{(user.rating || 0).toFixed(1)}</span>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className="bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-[1.02]">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Trophy className="h-5 w-5" />
+                    Your Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Total Collections:
+                    </span>
+                    <span className="font-bold text-xl">{completedPickups.length}</span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex justify-between items-center p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <span className="flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Active Jobs:
+                    </span>
+                    <span className="font-bold text-xl">{acceptedPickups.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                    <span className="flex items-center gap-2">
+                      <Star className="h-4 w-4" />
+                      Rating:
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-5 w-5 fill-yellow-300 text-yellow-300" />
+                      <span className="font-bold text-xl">{(user.rating || 0).toFixed(1)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Map Widget */}
-          <Card className="bg-white border-2 border-green-100 mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <MapPin className="h-5 w-5" />
-                Pickup Locations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full h-[300px] rounded-lg overflow-hidden">
-                <MapContainer
-                  center={[17.385, 78.4867]}
-                  zoom={12}
-                  style={{ height: "100%", width: "100%" }}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  {pendingPickups?.map((pickup) => (
-                    <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
-                      <Popup>
-                        <div className="text-sm">
-                          <p className="font-bold capitalize">{pickup.materialType}</p>
-                          <p className="text-xs">{pickup.estimatedWeight} kg</p>
-                          <p className="text-xs text-muted-foreground">{pickup.address}</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-                  {acceptedPickups?.map((pickup) => (
-                    <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
-                      <Popup>
-                        <div className="text-sm">
-                          <p className="font-bold capitalize">{pickup.materialType}</p>
-                          <p className="text-xs">{pickup.estimatedWeight} kg</p>
-                          <p className="text-xs text-blue-600">Accepted by you</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="glass border-2 border-green-200/50 shadow-xl mb-8 hover:shadow-2xl transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <MapPin className="h-5 w-5" />
+                  Pickup Locations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="w-full h-[300px] rounded-xl overflow-hidden border-2 border-green-200/30 shadow-inner">
+                  <MapContainer
+                    center={[17.385, 78.4867]}
+                    zoom={12}
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {pendingPickups?.map((pickup) => (
+                      <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
+                        <Popup>
+                          <div className="text-sm">
+                            <p className="font-bold capitalize">{pickup.materialType}</p>
+                            <p className="text-xs">{pickup.estimatedWeight} kg</p>
+                            <p className="text-xs text-muted-foreground">{pickup.address}</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                    {acceptedPickups?.map((pickup) => (
+                      <Marker key={pickup._id} position={[pickup.latitude, pickup.longitude]}>
+                        <Popup>
+                          <div className="text-sm">
+                            <p className="font-bold capitalize">{pickup.materialType}</p>
+                            <p className="text-xs">{pickup.estimatedWeight} kg</p>
+                            <p className="text-xs text-blue-600">Accepted by you</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Available Pickups Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="h-6 w-6 text-yellow-600" />
-              <h2 className="text-2xl font-bold text-green-800">Available Pickups</h2>
-              <Badge variant="secondary" className="ml-2">
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-yellow-100">
+                <Clock className="h-6 w-6 text-yellow-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-green-800">Available Pickups</h2>
+              <Badge variant="secondary" className="ml-2 text-lg px-3 py-1 bg-yellow-100 text-yellow-700 border-yellow-300">
                 {pendingPickups?.length || 0}
               </Badge>
             </div>
             {!pendingPickups || pendingPickups.length === 0 ? (
-              <Card className="bg-white border-2 border-green-100">
-                <CardContent className="py-12">
-                  <p className="text-muted-foreground text-center">
-                    No available pickups at the moment
-                  </p>
+              <Card className="glass border-2 border-green-200/50 shadow-lg">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <Clock className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground text-lg">
+                      No available pickups at the moment
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pendingPickups.map((pickup) => (
-                  <PickupCard key={pickup._id} pickup={pickup} type="available" />
+                {pendingPickups.map((pickup, index) => (
+                  <motion.div
+                    key={pickup._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <PickupCard pickup={pickup} type="available" />
+                  </motion.div>
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Accepted Pickups Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Truck className="h-6 w-6 text-blue-600" />
-              <h2 className="text-2xl font-bold text-green-800">Your Accepted Pickups</h2>
-              <Badge variant="secondary" className="ml-2">
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-blue-100">
+                <Truck className="h-6 w-6 text-blue-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-green-800">Your Accepted Pickups</h2>
+              <Badge variant="secondary" className="ml-2 text-lg px-3 py-1 bg-blue-100 text-blue-700 border-blue-300">
                 {acceptedPickups.length}
               </Badge>
             </div>
             {acceptedPickups.length === 0 ? (
-              <Card className="bg-white border-2 border-green-100">
-                <CardContent className="py-12">
-                  <p className="text-muted-foreground text-center">
-                    No accepted pickups yet
-                  </p>
+              <Card className="glass border-2 border-green-200/50 shadow-lg">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <Truck className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground text-lg">
+                      No accepted pickups yet
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {acceptedPickups.map((pickup) => (
-                  <PickupCard key={pickup._id} pickup={pickup} type="accepted" />
+                {acceptedPickups.map((pickup, index) => (
+                  <motion.div
+                    key={pickup._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <PickupCard pickup={pickup} type="accepted" />
+                  </motion.div>
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Completed Pickups Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-              <h2 className="text-2xl font-bold text-green-800">Completed Pickups</h2>
-              <Badge variant="secondary" className="ml-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-green-100">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-green-800">Completed Pickups</h2>
+              <Badge variant="secondary" className="ml-2 text-lg px-3 py-1 bg-green-100 text-green-700 border-green-300">
                 {completedPickups.length}
               </Badge>
             </div>
             {completedPickups.length === 0 ? (
-              <Card className="bg-white border-2 border-green-100">
-                <CardContent className="py-12">
-                  <p className="text-muted-foreground text-center">
-                    No completed pickups yet
-                  </p>
+              <Card className="glass border-2 border-green-200/50 shadow-lg">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <CheckCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-muted-foreground text-lg">
+                      No completed pickups yet
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {completedPickups.map((pickup) => (
-                  <PickupCard key={pickup._id} pickup={pickup} type="completed" />
+                {completedPickups.map((pickup, index) => (
+                  <motion.div
+                    key={pickup._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <PickupCard pickup={pickup} type="completed" />
+                  </motion.div>
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
         </motion.div>
       </div>
 
