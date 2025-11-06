@@ -1,26 +1,45 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Coins, Recycle, TrendingUp, Plus, LogOut, Award, Droplet, Leaf, Trophy } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Star, X } from "lucide-react";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
   const pickups = useQuery(api.pickups.getUserPickups);
   const transactions = useQuery(api.wallet.getTransactions);
+  const cancelPickup = useMutation(api.pickups.cancelPickup);
+  const rateCollector = useMutation(api.pickups.rateCollector);
+
+  const [ratingDialog, setRatingDialog] = useState<{ open: boolean; pickupId: Id<"pickupRequests"> | null; rating: number; feedback: string }>({
+    open: false,
+    pickupId: null,
+    rating: 5,
+    feedback: "",
+  });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/auth");
     }
-  }, [isLoading, isAuthenticated, navigate]);
+    // Redirect collectors to their dashboard
+    if (!isLoading && user && user.role === "collector") {
+      navigate("/collector");
+    }
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   if (isLoading || !user) {
     return (
@@ -65,6 +84,31 @@ export default function Dashboard() {
       color: ecoPoints >= 1000 ? "text-yellow-500" : ecoPoints >= 500 ? "text-gray-400" : "text-orange-600",
     },
   ];
+
+  const handleCancelPickup = async (pickupId: Id<"pickupRequests">) => {
+    try {
+      await cancelPickup({ pickupId });
+      toast.success("Pickup cancelled successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel pickup");
+    }
+  };
+
+  const handleRateCollector = async () => {
+    if (!ratingDialog.pickupId) return;
+
+    try {
+      await rateCollector({
+        pickupId: ratingDialog.pickupId,
+        rating: ratingDialog.rating,
+        feedback: ratingDialog.feedback || undefined,
+      });
+      toast.success("Rating submitted successfully!");
+      setRatingDialog({ open: false, pickupId: null, rating: 5, feedback: "" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit rating");
+    }
+  };
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -235,18 +279,61 @@ export default function Dashboard() {
                       key={pickup._id}
                       className="flex items-center justify-between p-4 glass-dark rounded-lg"
                     >
-                      <div>
-                        <p className="font-medium capitalize">{pickup.materialType}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {pickup.estimatedWeight} kg • {pickup.status}
-                        </p>
-                      </div>
-                      {pickup.ecoPointsEarned && (
-                        <div className="text-right">
-                          <p className="font-bold text-primary">+{pickup.ecoPointsEarned}</p>
-                          <p className="text-xs text-muted-foreground">EcoPoints</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium capitalize">{pickup.materialType}</p>
+                          <Badge
+                            variant={
+                              pickup.status === "completed"
+                                ? "default"
+                                : pickup.status === "pending"
+                                ? "secondary"
+                                : pickup.status === "cancelled"
+                                ? "destructive"
+                                : "outline"
+                            }
+                          >
+                            {pickup.status}
+                          </Badge>
                         </div>
-                      )}
+                        <p className="text-sm text-muted-foreground">
+                          {pickup.estimatedWeight} kg
+                        </p>
+                        {pickup.ecoPointsEarned && (
+                          <p className="text-xs text-primary mt-1">
+                            +{pickup.ecoPointsEarned} EcoPoints
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {pickup.status === "pending" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelPickup(pickup._id)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                        )}
+                        {pickup.status === "completed" && !pickup.collectorRating && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setRatingDialog({
+                                open: true,
+                                pickupId: pickup._id,
+                                rating: 5,
+                                feedback: "",
+                              })
+                            }
+                          >
+                            <Star className="h-4 w-4 mr-1" />
+                            Rate
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -255,6 +342,46 @@ export default function Dashboard() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Rate Collector Dialog */}
+      <Dialog open={ratingDialog.open} onOpenChange={(open) => setRatingDialog({ ...ratingDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rate Collector</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Rating</Label>
+              <div className="flex gap-2 mt-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-8 w-8 cursor-pointer ${
+                      star <= ratingDialog.rating ? "fill-yellow-500 text-yellow-500" : "text-gray-300"
+                    }`}
+                    onClick={() => setRatingDialog({ ...ratingDialog, rating: star })}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="feedback">Feedback (Optional)</Label>
+              <Textarea
+                id="feedback"
+                value={ratingDialog.feedback}
+                onChange={(e) => setRatingDialog({ ...ratingDialog, feedback: e.target.value })}
+                placeholder="Share your experience..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRatingDialog({ open: false, pickupId: null, rating: 5, feedback: "" })}>
+              Cancel
+            </Button>
+            <Button onClick={handleRateCollector}>Submit Rating</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

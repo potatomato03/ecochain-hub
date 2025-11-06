@@ -95,6 +95,10 @@ const schema = defineSchema(
       completedDate: v.optional(v.number()),
       ecoPointsEarned: v.optional(v.number()),
       blockchainTxHash: v.optional(v.string()),
+      citizenRating: v.optional(v.number()),
+      citizenFeedback: v.optional(v.string()),
+      collectorRating: v.optional(v.number()),
+      collectorFeedback: v.optional(v.string()),
     })
       .index("citizenId", ["citizenId"])
       .index("collectorId", ["collectorId"])

@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard.tsx";
 import PickupRequest from "./pages/PickupRequest.tsx";
 import Wallet from "./pages/Wallet.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
+import CollectorDashboard from "./pages/CollectorDashboard.tsx";
 import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -55,6 +56,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/collector" element={<CollectorDashboard />} />
             <Route path="/pickup" element={<PickupRequest />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/leaderboard" element={<Leaderboard />} />

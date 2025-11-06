@@ -71,12 +71,11 @@ export default function PickupRequest() {
     setIsLoading(true);
 
     try {
-      let totalPoints = 0;
       const weight = parseFloat(formData.estimatedWeight);
 
       // Create a pickup for each selected material type
       for (const materialType of selectedMaterials) {
-        const result = await createPickup({
+        await createPickup({
           materialType,
           estimatedWeight: weight / selectedMaterials.length,
           address: formData.address,
@@ -84,11 +83,10 @@ export default function PickupRequest() {
           longitude: formData.longitude,
           notes: formData.notes || undefined,
         });
-        totalPoints += result.ecoPoints;
       }
 
-      toast.success(`Pickup completed! You earned ${totalPoints} EcoPoints! 🎉`, {
-        description: `${formData.estimatedWeight}kg of ${selectedMaterials.join(", ")} recycled`,
+      toast.success(`Pickup request submitted successfully!`, {
+        description: `${formData.estimatedWeight}kg of ${selectedMaterials.join(", ")} - waiting for collector`,
       });
       navigate("/dashboard");
     } catch (error) {
