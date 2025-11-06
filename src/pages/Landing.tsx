@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Leaf, Recycle, Coins, MapPin, Award, ArrowRight, Shield, Zap, Users, BookOpen, ExternalLink } from "lucide-react";
+import { Leaf, Recycle, Coins, MapPin, Award, ArrowRight, Shield, Zap, Users, BookOpen, ExternalLink, Truck, Package, CheckCircle, TrendingUp, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
@@ -138,7 +138,7 @@ export default function Landing() {
         </div>
       </motion.div>
 
-      {/* Features Section */}
+      {/* How It Works Section */}
       <div className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -183,6 +183,78 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Collector Dashboard Section */}
+      <div className="py-20 px-4 glass-dark">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-4xl font-bold tracking-tight mb-4">For Waste Collectors</h2>
+            <p className="text-xl text-muted-foreground mb-8">
+              Turn your collection service into a thriving business
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              {
+                icon: Package,
+                title: "Accept Pickups",
+                description: "Browse and accept pickup requests in your area",
+              },
+              {
+                icon: CheckCircle,
+                title: "Complete Jobs",
+                description: "Verify materials, weigh them, and mark pickups complete",
+              },
+              {
+                icon: TrendingUp,
+                title: "Track Earnings",
+                description: "Monitor your collections and earnings in real-time",
+              },
+              {
+                icon: Star,
+                title: "Build Reputation",
+                description: "Earn ratings and become a top-rated collector",
+              },
+            ].map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="glass p-6 rounded-xl"
+              >
+                <feature.icon className="h-10 w-10 text-primary mb-3" />
+                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <Button
+              size="lg"
+              onClick={() => navigate(isAuthenticated ? "/collector" : "/auth")}
+              className="text-lg"
+            >
+              <Truck className="mr-2 h-5 w-5" />
+              {isAuthenticated ? "Go to Collector Dashboard" : "Start Collecting"}
+            </Button>
+          </motion.div>
         </div>
       </div>
 
