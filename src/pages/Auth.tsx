@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { ArrowRight, Loader2, Mail, Recycle, Truck, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -25,8 +27,10 @@ interface AuthProps {
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const setUserRole = useMutation(api.users.setUserRole);
   const navigate = useNavigate();
-  const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
+  const [step, setStep] = useState<"signIn" | "roleSelect" | { email: string }>("signIn");
+  const [selectedRole, setSelectedRole] = useState<"citizen" | "collector">("citizen");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +41,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirect);
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -65,16 +70,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      console.log("signed in");
-
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // After successful sign-in, show role selection
+      setStep("roleSelect");
+      setIsLoading(false);
     } catch (error) {
       console.error("OTP verification error:", error);
-
       setError("The verification code you entered is incorrect.");
       setIsLoading(false);
-
       setOtp("");
     }
   };
@@ -83,23 +85,34 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Attempting anonymous sign in...");
       await signIn("anonymous");
-      console.log("Anonymous sign in successful");
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      
+      // After successful sign-in, show role selection
+      setStep("roleSelect");
+      setIsLoading(false);
     } catch (error) {
       console.error("Guest login error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
       setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsLoading(false);
+    }
+  };
+
+  const handleRoleSelection = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await setUserRole({ role: selectedRole });
+      const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+      navigate(redirect);
+    } catch (error) {
+      console.error("Role selection error:", error);
+      setError("Failed to set role. Please try again.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-
-      
       {/* Auth Content */}
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center justify-center h-full flex-col">
@@ -180,6 +193,75 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </CardContent>
               </form>
             </>
+          ) : step === "roleSelect" ? (
+            <>
+              <CardHeader className="text-center mt-4">
+                <CardTitle>Choose Your Role</CardTitle>
+                <CardDescription>
+                  Are you a waste generator or collector?
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="space-y-3">
+                  <div
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedRole === "citizen"
+                        ? "border-primary bg-primary/10"
+                        : "border-white/20 glass-dark"
+                    }`}
+                    onClick={() => setSelectedRole("citizen")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Recycle className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="font-bold">Waste Generator</p>
+                        <p className="text-sm text-muted-foreground">
+                          Schedule pickups and earn rewards
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedRole === "collector"
+                        ? "border-primary bg-primary/10"
+                        : "border-white/20 glass-dark"
+                    }`}
+                    onClick={() => setSelectedRole("collector")}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-8 w-8 text-primary" />
+                      <div>
+                        <p className="font-bold">Waste Collector</p>
+                        <p className="text-sm text-muted-foreground">
+                          Accept pickups and earn income
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleRoleSelection}
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Setting up...
+                    </>
+                  ) : (
+                    <>
+                      Continue as {selectedRole === "citizen" ? "Generator" : "Collector"}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </>
           ) : (
             <>
               <CardHeader className="text-center mt-4">
@@ -201,7 +283,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       disabled={isLoading}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && otp.length === 6 && !isLoading) {
-                          // Find the closest form and submit it
                           const form = (e.target as HTMLElement).closest("form");
                           if (form) {
                             form.requestSubmit();
