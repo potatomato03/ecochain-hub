@@ -248,11 +248,11 @@ export default function Landing() {
           >
             <Button
               size="lg"
-              onClick={() => navigate(isAuthenticated ? "/collector" : "/auth")}
+              onClick={() => navigate("/collector")}
               className="text-lg"
             >
               <Truck className="mr-2 h-5 w-5" />
-              {isAuthenticated ? "Go to Collector Dashboard" : "Start Collecting"}
+              Go to Collector Dashboard
             </Button>
           </motion.div>
         </div>
