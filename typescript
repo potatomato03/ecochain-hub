@@ -1,0 +1,40 @@
+// Get current user data (auto-updates)
+const user = useQuery(api.users.currentUser);
+
+// Get pending pickups available to accept
+const pendingPickups = useQuery(api.pickups.getPendingPickups);
+
+// Get pickups assigned to this collector
+const assignedPickups = useQuery(api.pickups.getCollectorPickups);
+
+// Toggle collector availability status
+const toggleAvailability = useMutation(api.pickups.toggleAvailability);
+
+// Accept a pickup request
+const acceptPickup = useMutation(api.pickups.acceptPickup);
+
+// Mark pickup as complete
+const completePickup = useMutation(api.pickups.completePickup);
+
+// Rate the citizen after completing pickup
+const rateCitizen = useMutation(api.pickups.rateCitizen);
+
+const handleCompletePickup = async () => {
+  try {
+    // Call mutation with pickup ID and actual weight
+    await completePickup({
+      pickupId: selectedPickup._id,
+      actualWeight: parseFloat(actualWeight),
+    });
+    
+    // Backend automatically:
+    // 1. Updates pickup status to "completed"
+    // 2. Awards EcoPoints to the citizen
+    // 3. Updates collector's total collections
+    // 4. All queries re-fetch automatically
+    
+    toast.success("Pickup completed!");
+  } catch (error) {
+    toast.error("Failed to complete pickup");
+  }
+};
