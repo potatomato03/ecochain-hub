@@ -81,7 +81,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setTimeout(async () => {
         try {
           await setUserRole({ role: selectedRole });
-          const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+          const redirect = selectedRole === "collector" ? "/collector" : "/landing";
           navigate(redirect, { replace: true });
         } catch (err) {
           console.error("Role setting error:", err);
@@ -106,7 +106,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setTimeout(async () => {
         try {
           await setUserRole({ role: selectedRole });
-          const redirect = selectedRole === "collector" ? "/collector" : "/dashboard";
+          const redirect = selectedRole === "collector" ? "/collector" : "/landing";
           navigate(redirect, { replace: true });
         } catch (err) {
           console.error("Role setting error:", err);

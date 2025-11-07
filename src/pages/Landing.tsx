@@ -49,10 +49,10 @@ export default function Landing() {
               <div className="flex items-center gap-4">
                 {!isLoading && (
                   <Button
-                    onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                    onClick={() => navigate("/dashboard")}
                     className="glass-dark"
                   >
-                    {isAuthenticated ? "Dashboard" : "Get Started"}
+                    Dashboard
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 )}
@@ -83,7 +83,7 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
                   size="lg"
-                  onClick={() => navigate(isAuthenticated ? "/dashboard" : "/auth")}
+                  onClick={() => navigate("/dashboard")}
                   className="text-lg"
                 >
                   Start Recycling
