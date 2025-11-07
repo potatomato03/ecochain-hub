@@ -53,9 +53,39 @@ export default function Dashboard() {
   const completedPickups = pickups?.filter((p) => p.status === "completed").length || 0;
   const totalWeight = pickups?.reduce((sum, p) => sum + (p.actualWeight || 0), 0) || 0;
 
-  // Calculate environmental impact metrics
-  const co2Saved = Math.round(totalWeight * 2.5); // 2.5 kg CO2 per kg recycled
-  const waterConserved = Math.round(totalWeight * 17); // 17 liters per kg
+  // Material-specific environmental impact coefficients
+  const materialImpact: Record<string, { co2: number; water: number }> = {
+    plastic: { co2: 1.8, water: 65 },      // kg CO2 and liters per kg
+    paper: { co2: 1.2, water: 35 },
+    glass: { co2: 0.4, water: 3 },
+    metal: { co2: 1.7, water: 50 },
+    electronics: { co2: 3.5, water: 120 }, // E-waste has high impact
+    organic: { co2: 0.5, water: 10 },      // Composting impact
+  };
+
+  // Calculate material-specific environmental impact
+  const calculateEnvironmentalImpact = () => {
+    let totalCO2 = 0;
+    let totalWater = 0;
+
+    pickups?.forEach((pickup) => {
+      if (pickup.status === "completed" && pickup.actualWeight) {
+        const weight = pickup.actualWeight;
+        const materialType = pickup.materialType.toLowerCase();
+        const impact = materialImpact[materialType] || { co2: 2.5, water: 17 }; // Default fallback
+        
+        totalCO2 += weight * impact.co2;
+        totalWater += weight * impact.water;
+      }
+    });
+
+    return {
+      co2Saved: Math.round(totalCO2),
+      waterConserved: Math.round(totalWater),
+    };
+  };
+
+  const { co2Saved, waterConserved } = calculateEnvironmentalImpact();
 
   // Determine achievements based on metrics
   const achievements = [
@@ -151,7 +181,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{co2Saved}</div>
-                <p className="text-xs text-muted-foreground mt-1">kg</p>
+                <p className="text-xs text-muted-foreground mt-1">kg (material-specific)</p>
               </CardContent>
             </Card>
 
@@ -162,7 +192,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{waterConserved}</div>
-                <p className="text-xs text-muted-foreground mt-1">liters</p>
+                <p className="text-xs text-muted-foreground mt-1">liters (material-specific)</p>
               </CardContent>
             </Card>
 
