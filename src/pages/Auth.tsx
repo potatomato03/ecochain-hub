@@ -41,7 +41,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       if (user.role === "collector") {
         navigate("/collector", { replace: true });
       } else if (user.role === "citizen") {
-        navigate("/dashboard", { replace: true });
+        navigate("/landing", { replace: true });
       }
     }
   }, [authLoading, isAuthenticated, user, navigate]);
