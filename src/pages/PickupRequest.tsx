@@ -28,6 +28,7 @@ export default function PickupRequest() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [showMap, setShowMap] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
   const [formData, setFormData] = useState({
     estimatedWeight: "",
     address: "",
@@ -53,6 +54,11 @@ export default function PickupRequest() {
     }));
     setShowMap(false);
     toast.success("Location selected successfully!");
+  };
+
+  const handleOpenMap = () => {
+    setMapKey(prev => prev + 1); // Force remount to fix Leaflet state
+    setShowMap(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,7 +183,7 @@ export default function PickupRequest() {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => setShowMap(true)}
+                            onClick={handleOpenMap}
                           >
                             <MapPin className="h-4 w-4 mr-2" />
                             Select on Map
@@ -192,6 +198,7 @@ export default function PickupRequest() {
                     ) : (
                       <div className="space-y-3">
                         <LocationPicker
+                          key={mapKey}
                           onLocationSelect={handleLocationSelect}
                           initialLat={formData.latitude || 17.385}
                           initialLng={formData.longitude || 78.4867}

@@ -25,13 +25,6 @@ function LocationMarker({ onLocationSelect }: { onLocationSelect: (lat: number, 
       setPosition(e.latlng);
       onLocationSelect(e.latlng.lat, e.latlng.lng);
     },
-  });
-
-  useEffect(() => {
-    map.locate();
-  }, [map]);
-
-  useMapEvents({
     locationfound(e) {
       if (!position) {
         setPosition(e.latlng);
@@ -41,10 +34,21 @@ function LocationMarker({ onLocationSelect }: { onLocationSelect: (lat: number, 
     },
   });
 
+  useEffect(() => {
+    map.locate();
+  }, [map]);
+
   return position === null ? null : <Marker position={position} />;
 }
 
 export default function LocationPicker({ onLocationSelect, initialLat = 17.385, initialLng = 78.4867 }: LocationPickerProps) {
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    // Force remount of map when component mounts to fix Leaflet state issues
+    setKey(prev => prev + 1);
+  }, []);
+
   const handleLocationSelect = async (lat: number, lng: number) => {
     // Reverse geocoding using Nominatim (OpenStreetMap)
     try {
@@ -63,9 +67,11 @@ export default function LocationPicker({ onLocationSelect, initialLat = 17.385, 
   return (
     <div className="w-full h-[400px] rounded-lg overflow-hidden border-2 border-white/20">
       <MapContainer
+        key={key}
         center={[initialLat, initialLng]}
         zoom={13}
         style={{ height: "100%", width: "100%" }}
+        scrollWheelZoom={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
